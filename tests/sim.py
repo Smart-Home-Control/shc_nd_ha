@@ -170,6 +170,7 @@ class FakeTransport:
         self.on_frame = on_frame
         self.sent: list[tuple[str, str | None]] = []
         self.tcp_requests: list[str] = []
+        self.multicast: list[bool] = []
         self.started = False
         FakeTransport.instances.append(self)
 
@@ -179,8 +180,11 @@ class FakeTransport:
     async def async_stop(self) -> None:
         self.started = False
 
-    async def async_send(self, frame: str, ip: str | None = None) -> None:
+    async def async_send(
+        self, frame: str, ip: str | None = None, *, multicast: bool = True
+    ) -> None:
         self.sent.append((frame, ip))
+        self.multicast.append(multicast or ip is None)
         parsed = parse_frame(frame)
         loop = asyncio.get_running_loop()
         for device in self.devices:

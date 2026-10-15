@@ -17,6 +17,8 @@ import time
 from .const import (
     MAX_FRAME_LEN,
     MULTICAST_GROUP,
+    RX_QUIET_MAX_WAIT_S,
+    RX_QUIET_S,
     TCP_CONNECT_TIMEOUT_S,
     TCP_IDLE_TIMEOUT_S,
     TCP_PORT,
@@ -51,10 +53,12 @@ def _make_socket(interface: str) -> socket.socket:
 
 
 class _UdpProtocol(asyncio.DatagramProtocol):
-    def __init__(self, on_frame: FrameCallback) -> None:
+    def __init__(self, on_frame: FrameCallback, on_rx: Callable[[], None]) -> None:
         self._on_frame = on_frame
+        self._on_rx = on_rx
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        self._on_rx()
         if len(data) > MAX_FRAME_LEN:
             return
         text = data.decode("utf-8", errors="replace")
@@ -79,7 +83,9 @@ class NdTransport:
         self._on_frame = on_frame
         self._transport: asyncio.DatagramTransport | None = None
         self._send_lock = asyncio.Lock()
-        self._last_send = 0.0
+        # Último envio por destino (IP ou o grupo multicast).
+        self._last_send: dict[str, float] = {}
+        self._last_rx = 0.0
         self._tcp_locks: dict[str, asyncio.Lock] = {}
 
     async def async_start(self) -> None:
@@ -87,30 +93,54 @@ class NdTransport:
         loop = asyncio.get_running_loop()
         sock = _make_socket(self._interface)
         self._transport, _ = await loop.create_datagram_endpoint(
-            lambda: _UdpProtocol(self._on_frame), sock=sock
+            lambda: _UdpProtocol(self._on_frame, self._mark_rx), sock=sock
         )
+
+    def _mark_rx(self) -> None:
+        self._last_rx = time.monotonic()
 
     async def async_stop(self) -> None:
         if self._transport is not None:
             self._transport.close()
             self._transport = None
 
-    async def async_send(self, frame: str, ip: str | None = None) -> None:
-        """Envia por unicast (quando o IP é conhecido) e pelo multicast.
+    async def async_send(
+        self, frame: str, ip: str | None = None, *, multicast: bool = True
+    ) -> None:
+        """Envia por unicast (quando o IP é conhecido) e/ou pelo multicast.
 
         Os dois caminhos levam o MESMO frame e o MESMO seed: o firmware
         processa o primeiro e descarta o outro.
+
+        O equipamento perde frames que chegam com menos de ~150 ms entre si
+        (medido no MRQ10 3.3.0), por isso há um intervalo mínimo por destino.
+        O multicast chega a TODOS os equipamentos, então conta para todos.
         """
         if self._transport is None:
             raise OSError("transport not started")
+        targets = ([ip] if ip else []) + ([MULTICAST_GROUP] if multicast or not ip else [])
         data = frame.encode("ascii")
         async with self._send_lock:
-            for target in ([ip] if ip else []) + [MULTICAST_GROUP]:
-                wait = self._last_send + UDP_SPACING_S - time.monotonic()
+            # Espera a rede ficar em silêncio por um instante (com teto).
+            started = time.monotonic()
+            while (
+                (quiet := self._last_rx + RX_QUIET_S - time.monotonic()) > 0
+                and time.monotonic() - started < RX_QUIET_MAX_WAIT_S
+            ):
+                await asyncio.sleep(min(quiet, RX_QUIET_MAX_WAIT_S))
+            for target in targets:
+                if target == MULTICAST_GROUP:
+                    previous = max(self._last_send.values(), default=0.0)
+                else:
+                    previous = max(
+                        self._last_send.get(target, 0.0),
+                        self._last_send.get(MULTICAST_GROUP, 0.0),
+                    )
+                wait = previous + UDP_SPACING_S - time.monotonic()
                 if wait > 0:
                     await asyncio.sleep(wait)
                 self._transport.sendto(data, (target, UDP_PORT))
-                self._last_send = time.monotonic()
+                self._last_send[target] = time.monotonic()
 
     async def async_tcp_request(
         self,

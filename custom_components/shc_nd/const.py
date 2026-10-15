@@ -34,10 +34,19 @@ PROBE_COOLDOWN_S: Final = 30
 
 # Confirmação de comando: espera a resposta de estado por tentativa, reenviando
 # o MESMO frame (mesmo seed: o firmware descarta o repetido).
-COMMAND_ATTEMPTS: Final = 3
-COMMAND_TIMEOUT_S: Final = 1.5
-# Envios UDP espaçados: equipamento de baixo consumo perde pacote em rajada.
-UDP_SPACING_S: Final = 0.05
+# A resposta normal chega em 10-80 ms; 0,7 s por tentativa recupera rápido um
+# frame perdido sem disparar retransmissão à toa.
+COMMAND_ATTEMPTS: Final = 4
+COMMAND_TIMEOUT_S: Final = 0.7
+# Intervalo mínimo entre frames para o mesmo equipamento. Medido no MRQ10
+# 3.3.0 em 15/10/2026: com 50 ms entre frames ele perdeu 6 de 10; com 150 ms,
+# nenhum. 200 ms dá margem.
+UDP_SPACING_S: Final = 0.2
+# Todo equipamento ouve todo o multicast: logo depois de um frame na rede
+# (botão de keypad, cena, resposta de outro equipamento) ele ainda está
+# ocupado. Antes de enviar, espera esse silêncio, mas nunca mais que o teto.
+RX_QUIET_S: Final = 0.15
+RX_QUIET_MAX_WAIT_S: Final = 0.4
 
 # Describe por TCP: conecta, pede `/*@9`, lê até `nAC` descritores ou silêncio,
 # fecha. O servidor TCP do equipamento atende um cliente por vez.

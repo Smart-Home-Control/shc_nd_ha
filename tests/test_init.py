@@ -108,6 +108,9 @@ async def test_lost_command_is_retried_with_same_seed(
     sent = [f for f, _ in transport().sent if "r0=on" in f]
     assert len(sent) == 2
     assert len({parse_frame(f).seed for f in sent}) == 1
+    # 1ª tentativa só unicast; a retransmissão também vai pelo multicast.
+    flags = [m for (f, _), m in zip(transport().sent, transport().multicast) if "r0=on" in f]
+    assert flags == [False, True]
     assert device.executed == ["r0=on"]
     assert hass.states.get(RELAY0).state == STATE_ON
 

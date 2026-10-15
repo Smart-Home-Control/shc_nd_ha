@@ -64,17 +64,45 @@ Frame: `$ID>path@proto?query<seed#`.
 
 ## Comandos e confirmação
 
-1. O frame vai por UDP **unicast** para o IP conhecido e pelo **multicast**,
-   com o mesmo seed.
-2. Comando do HA só é dado como feito quando a **resposta de estado do
-   equipamento** confirma o valor pedido. Timeout de 1,5 s por tentativa, até
-   3 tentativas.
-3. As retransmissões repetem **o mesmo frame com o mesmo seed**. Se o comando
-   chegou e só a resposta se perdeu, o firmware descarta a cópia e a ação não
-   acontece duas vezes.
-4. Sem confirmação depois das 3 tentativas, o serviço retorna erro e a
-   integração relê o estado. A tela mostra o que o equipamento realmente fez,
-   nunca o que se presumiu.
+1. A **1ª tentativa vai só por UDP unicast** para o IP conhecido. A cópia
+   multicast seria mais um frame que todos os equipamentos precisam processar.
+2. As retransmissões vão por unicast **e** multicast, caso o IP tenha mudado,
+   sempre **com o mesmo frame e o mesmo seed**. Se o comando chegou e só a
+   resposta se perdeu, o firmware descarta a cópia e a ação não acontece duas
+   vezes.
+3. O comando só é dado como feito quando a **resposta de estado do
+   equipamento** confirma o valor pedido: até 4 tentativas de 0,7 s. A resposta
+   normal chega em 10-80 ms.
+4. Sem confirmação, o serviço retorna erro e a integração relê o estado. A tela
+   mostra o que o equipamento realmente fez, nunca o que se presumiu.
+
+### Ritmo de envio (medido na bancada)
+
+O MRQ10 3.3.0 **perde frames que chegam muito juntos**. Teste em 15/10/2026,
+com 10 comandos seguidos:
+
+| Intervalo entre frames | Respostas |
+|---|---|
+| 50 ms | 4 de 10 |
+| 150 ms | 10 de 10 |
+
+Por isso a integração:
+- espaça **200 ms entre frames para o mesmo equipamento**. O multicast conta
+  para todos, porque todos o recebem. Equipamentos diferentes não esperam um
+  pelo outro;
+- antes de enviar, espera **150 ms de silêncio** depois do último frame visto
+  na rede, com teto de 400 ms. Todo equipamento ouve todo o multicast, então
+  logo depois de um botão de keypad, de uma cena ou de uma resposta ele ainda
+  está ocupado. É exatamente o momento em que uma automação do HA reage a um
+  botão.
+
+**Resultado na bancada:**
+
+| Cenário | Antes | Depois |
+|---|---|---|
+| Comandos seguidos | toda tentativa depois da primeira falhava; 1,6 s por comando | 0,2 s por comando, nenhuma retransmissão |
+| Cena de 4 relés no mesmo equipamento | — | 0,8 s |
+| Clique de keypad → automação do HA → relé | — | ~0,16 s depois do clique; 5 de 5 sem retransmissão |
 
 **Idempotência:**
 - **Luz:** sempre `on`/`off` explícito, **nunca `toggle`**. Repetir é inofensivo.

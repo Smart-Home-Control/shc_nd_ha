@@ -226,6 +226,15 @@ class NdHub:
         key = (frame.device_id, frame.seed, frame.path, frame.query)
         if (seen := self._dedup.get(key)) is not None and now - seen < DEDUP_TTL_S:
             return
+        _LOGGER.debug(
+            "RX %s %s@%d?%s<%d from %s",
+            frame.device_id,
+            frame.path,
+            frame.proto,
+            frame.query[:200],
+            frame.seed,
+            source_ip,
+        )
         self._dedup[key] = now
         if len(self._dedup) > 512:
             self._dedup = {k: t for k, t in self._dedup.items() if now - t < DEDUP_TTL_S}
@@ -488,7 +497,9 @@ class NdHub:
         if device.caps is None:
             return
         for path in device.caps.state_paths:
-            await self._send(build_frame(device.device_id, path, seed=new_seed()), device.ip)
+            await self._send(
+                build_frame(device.device_id, path, seed=new_seed()), device.ip, multicast=False
+            )
 
     async def async_command(
         self,
@@ -510,7 +521,10 @@ class NdHub:
             waiter = _Waiter(device.device_id, path, expect, loop.create_future())
             self._waiters.append(waiter)
             try:
-                await self._send(frame, device.ip)
+                # 1ª tentativa só por unicast: a cópia multicast seria mais um
+                # frame para TODOS os equipamentos processarem. As seguintes
+                # vão pelos dois caminhos, caso o IP tenha mudado.
+                await self._send(frame, device.ip, multicast=attempt > 1)
                 await asyncio.wait_for(waiter.future, COMMAND_TIMEOUT_S)
                 return
             except TimeoutError:
@@ -528,9 +542,9 @@ class NdHub:
             translation_placeholders={"device": device.name},
         )
 
-    async def _send(self, frame: str, ip: str | None = None) -> None:
+    async def _send(self, frame: str, ip: str | None = None, *, multicast: bool = True) -> None:
         try:
-            await self._transport.async_send(frame, ip)
+            await self._transport.async_send(frame, ip, multicast=multicast)
         except OSError as err:
             _LOGGER.debug("Send failed: %s", err)
 
