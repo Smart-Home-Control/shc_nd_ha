@@ -1,0 +1,71 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SHC NDv2",
+        "description": "Local control of Smart Home Control NDv2 devices (firmware 3.x). Devices are discovered automatically over multicast 239.5.0.2:5202; no device needs to be added by hand.",
+        "data": {
+          "interface": "Network interface IPv4 address"
+        },
+        "data_description": {
+          "interface": "Leave 0.0.0.0 to use the default interface. On hosts with several networks, enter the IP of the interface on the devices' network."
+        }
+      },
+      "confirm": {
+        "title": "SHC NDv2",
+        "description": "{count} NDv2 device(s) answered right now. Devices that are offline or that appear later are added automatically."
+      }
+    },
+    "error": {
+      "invalid_interface": "Enter a valid IPv4 address.",
+      "cannot_bind": "Could not open UDP port 5202 or join multicast group 239.5.0.2. Check that Home Assistant uses host networking."
+    },
+    "abort": {
+      "single_instance_allowed": "Already configured. Only one instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "reconcile_minutes": "State reconciliation interval (minutes)"
+        },
+        "data_description": {
+          "reconcile_minutes": "Real-time updates come from multicast. This low-frequency check only repairs states lost to dropped packets."
+        }
+      }
+    }
+  },
+  "entity": {
+    "light": {
+      "relay": { "name": "Relay {number}" }
+    },
+    "cover": {
+      "blind": { "name": "Blind {number}" }
+    },
+    "event": {
+      "button": {
+        "name": "Button {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressed",
+              "click": "Click",
+              "hold": "Hold",
+              "holding": "Holding",
+              "release": "Released"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "command_not_confirmed": {
+      "message": "{device} did not confirm the command. The state was requested again."
+    },
+    "cannot_bind": {
+      "message": "Could not open the NDv2 network socket: {error}"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "entity": {
+    "event": {
+      "button": { "default": "mdi:gesture-tap-button" }
+    }
+  }
+}

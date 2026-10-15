@@ -1,0 +1,71 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SHC NDv2",
+        "description": "Controle local dos equipamentos Smart Home Control NDv2 (firmware 3.x). Os equipamentos são descobertos sozinhos pelo multicast 239.5.0.2:5202; nenhum precisa ser cadastrado à mão.",
+        "data": {
+          "interface": "Endereço IPv4 da interface de rede"
+        },
+        "data_description": {
+          "interface": "Deixe 0.0.0.0 para usar a interface padrão. Em máquinas com várias redes, informe o IP da interface que está na rede dos equipamentos."
+        }
+      },
+      "confirm": {
+        "title": "SHC NDv2",
+        "description": "{count} equipamento(s) NDv2 responderam agora. Equipamentos desligados ou que aparecerem depois entram sozinhos."
+      }
+    },
+    "error": {
+      "invalid_interface": "Informe um endereço IPv4 válido.",
+      "cannot_bind": "Não foi possível abrir a porta UDP 5202 ou entrar no grupo multicast 239.5.0.2. Confira se o Home Assistant usa a rede do host."
+    },
+    "abort": {
+      "single_instance_allowed": "Já configurado. Só é permitida uma instância."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "reconcile_minutes": "Intervalo da conferência de estado (minutos)"
+        },
+        "data_description": {
+          "reconcile_minutes": "As mudanças chegam na hora pelo multicast. Esta conferência de baixa frequência só corrige estados perdidos por pacote descartado."
+        }
+      }
+    }
+  },
+  "entity": {
+    "light": {
+      "relay": { "name": "Relé {number}" }
+    },
+    "cover": {
+      "blind": { "name": "Persiana {number}" }
+    },
+    "event": {
+      "button": {
+        "name": "Botão {number}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Pressionado",
+              "click": "Clique",
+              "hold": "Segurou",
+              "holding": "Segurando",
+              "release": "Soltou"
+            }
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "command_not_confirmed": {
+      "message": "{device} não confirmou o comando. O estado foi consultado de novo."
+    },
+    "cannot_bind": {
+      "message": "Não foi possível abrir o socket de rede NDv2: {error}"
+    }
+  }
+}
