@@ -47,21 +47,15 @@ por persiana não viram luz.
 
 ## Instalação
 
-### Pelo HACS (repositório personalizado)
-
-1. HACS → menu ⋮ → **Repositórios personalizados**.
-2. URL do repositório, tipo **Integração**.
-3. Procure **SHC NDv2**, instale e **reinicie** o Home Assistant.
-4. **Configurações → Dispositivos e serviços → Adicionar integração → SHC NDv2**.
-
-### Manual (ZIP)
+A distribuição é só pelo arquivo ZIP (não há HACS).
 
 1. Baixe o `shc_nd.zip` da página de releases, ou gere com `scripts/build_zip.sh`.
-2. Extraia em `<config>/custom_components/shc_nd/`. A pasta precisa conter
-   `manifest.json` diretamente.
-3. Reinicie o Home Assistant e adicione a integração como no passo 4 acima.
-
-Depois de instalada, a integração **não depende do HACS** para funcionar.
+2. Extraia em `<config>/custom_components/shc_nd/`, onde `<config>` é a pasta
+   que tem o `configuration.yaml`. A pasta `shc_nd` precisa conter
+   `manifest.json` diretamente. Dá para copiar pelo add-on **Samba share** ou
+   **File editor**, ou por SSH.
+3. Reinicie o Home Assistant.
+4. **Configurações → Dispositivos e serviços → Adicionar integração → SHC NDv2**.
 
 ### Configuração
 
@@ -78,8 +72,8 @@ Em **Configurar** há uma única opção: o intervalo da conferência de estado
 
 ## Atualização
 
-- **HACS:** "Atualizar" no card da integração e reinicie.
-- **Manual:** substitua a pasta `custom_components/shc_nd/` e reinicie.
+Baixe o ZIP da versão nova, substitua o conteúdo de
+`custom_components/shc_nd/` e reinicie.
 
 As entidades são preservadas: o identificador de cada uma é o ID do equipamento
 mais a carga, e não muda entre versões.
@@ -87,7 +81,7 @@ mais a carga, e não muda entre versões.
 ## Remoção
 
 1. **Configurações → Dispositivos e serviços → SHC NDv2 → ⋮ → Excluir.**
-2. Remova pelo HACS, ou apague `custom_components/shc_nd/`.
+2. Apague a pasta `custom_components/shc_nd/`.
 3. Reinicie.
 
 Nada é gravado nos equipamentos, então não há o que desfazer neles.

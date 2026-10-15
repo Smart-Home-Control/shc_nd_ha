@@ -1,7 +1,0 @@
-{
-  "name": "SHC NDv2",
-  "homeassistant": "2025.1.0",
-  "render_readme": true,
-  "zip_release": true,
-  "filename": "shc_nd.zip"
-}

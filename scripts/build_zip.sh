@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Gera dist/shc_nd.zip com o conteúdo de custom_components/shc_nd na raiz do
-# ZIP (formato do HACS com zip_release e da instalação manual).
+# ZIP: o formato da instalação manual (extrair em custom_components/shc_nd/).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p dist
