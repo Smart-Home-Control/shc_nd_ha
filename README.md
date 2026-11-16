@@ -68,7 +68,7 @@ A integração faz uma descoberta na hora e mostra quantos equipamentos NDv2
 responderam. Os demais entram sozinhos quando aparecerem.
 
 Em **Configurar** há uma única opção: o intervalo da conferência de estado
-(padrão 5 min). Veja [`docs/protocolo.md`](docs/protocolo.md).
+(padrão 5 min).
 
 ## Atualização
 
@@ -116,9 +116,7 @@ O formato completo dos eventos está em [`docs/eventos.md`](docs/eventos.md).
 ## Documentação
 
 - [`docs/eventos.md`](docs/eventos.md): formato dos eventos de botão.
-- [`docs/protocolo.md`](docs/protocolo.md): como a integração usa o protocolo
-  ND, confiabilidade, segurança e limitações.
-- [`docs/testes.md`](docs/testes.md): testes automatizados e roteiro de bancada.
+- Documentação técnica interna (equipe): https://docs-novo.smarthomecontrol.com.br/painel/tecnica/busca-integracoes/home-assistant/
 
 ## Desenvolvimento
 
